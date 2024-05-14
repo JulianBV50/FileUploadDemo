@@ -1,0 +1,104 @@
+﻿@page "/file1"
+@rendermode InteractiveServer
+
+<PageTitle>Blazor File Upload</PageTitle>
+
+<h1>BLazor File Upload</h1>
+
+<div style="margin-bottom: 20px; display: flex;">
+    <div>Select your fiel:</div>
+
+    @* Para cargar un solo archivo *@
+    @* <InputFile OnChange="FileUploaded"> *@
+
+    <InputFile OnChange="FileUploaded" multiple>
+    </InputFile>
+</div>
+
+<h2>Seleted file</h2>
+<div>
+    <div>File name: @FileName</div>
+    <div>File size: @FileSize</div>
+    <div>File type: @FileType</div>
+    <div>Last modified: @LastModified</div>
+</div>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div>Error: @errorMessage</div>
+}
+
+@code {
+    public string FileName { get; set; } = string.Empty;
+    public long FileSize { get; set; }
+    public string FileType { get; set; } = string.Empty;
+    public DateTimeOffset LastModified { get; set; }
+
+    const int MAX_FILESIZE = 5000 * 1024; // 5 MB
+    public string errorMessage { get; set; } = string.Empty;
+
+    public async Task FileUploaded(InputFileChangeEventArgs e)
+    {
+        var browseFiles = e.GetMultipleFiles();
+
+        // Para cargar un solo archivo
+        // var browseFile = e.File;
+
+        foreach (var browseFile in browseFiles)
+        {
+            if (browseFile != null)
+            {
+                FileSize = browseFile.Size;
+                FileType = browseFile.ContentType;
+                FileName = browseFile.Name;
+                LastModified = browseFile.LastModified;
+
+                try
+                {
+                    var fileStream = browseFile.OpenReadStream(MAX_FILESIZE);
+
+                    var randomFile = Path.GetTempFileName();
+                    var extension = Path.GetExtension(browseFile.Name);
+                    var targetFilePath = Path.ChangeExtension(randomFile, extension);
+
+                    var targetStream = new FileStream(targetFilePath, FileMode.Create);
+                    await fileStream.CopyToAsync(targetStream);
+                    targetStream.Close();
+                }
+                catch (Exception ex)
+                {
+                    errorMessage = ex.Message;
+                }
+            }
+        }
+
+        // var browseFile = e.File;
+
+        // if (browseFile != null)
+        // {
+        //     FileSize = browseFile.Size;
+        //     FileType = browseFile.ContentType;
+        //     FileName = browseFile.Name;
+        //     LastModified = browseFile.LastModified;
+
+        //     try
+        //     {
+        //         var fileStream = browseFile.OpenReadStream(MAX_FILESIZE);
+
+        //         var randomFile = Path.GetTempFileName();
+        //         var extension = Path.GetExtension(browseFile.Name);
+        //         var targetFilePath = Path.ChangeExtension(randomFile, extension);
+
+        //         var targetStream = new FileStream(targetFilePath, FileMode.Create);
+        //         await fileStream.CopyToAsync(targetStream);
+        //         targetStream.Close();
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         errorMessage = ex.Message;
+        //     }
+        // }
+    }
+}
+
+
